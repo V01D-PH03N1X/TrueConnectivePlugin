@@ -5,6 +5,9 @@
 //********************************************************************************************
 package me.mydark.trueconnectiveplugin;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import lombok.Getter;
 import me.mydark.trueconnectiveplugin.commands.ConnectTikTokUsernameCommand;
 import me.mydark.trueconnectiveplugin.commands.RemainingPlaytimeCommand;
@@ -25,6 +28,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.slf4j.Logger;
 
 public final class TrueConnective extends JavaPlugin implements Listener {
@@ -37,6 +41,8 @@ public final class TrueConnective extends JavaPlugin implements Listener {
     private DatabaseManager databaseManager;
     private TikTokManager tikTokManager;
 
+    private Map<UUID, BukkitTask> playerTasks = new HashMap<>();
+
     @Override
     public void onEnable() {
         synchronized (this) {
@@ -48,6 +54,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
 
         // Ignoring mkdir return value because it is not needed
         getDataFolder().mkdir();
+        saveDefaultConfig();
 
         databaseManager = new DatabaseManager(this);
         tikTokManager = new TikTokManager();
@@ -59,7 +66,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         CommandMap commandMap = Bukkit.getCommandMap();
         commandMap.register("trueconnective", new TrueConnectiveCommand());
         commandMap.register("ttconect", new ConnectTikTokUsernameCommand(databaseManager));
-        commandMap.register("playtime", new RemainingPlaytimeCommand(databaseManager));
+        commandMap.register("playtime", new RemainingPlaytimeCommand(databaseManager, instance));
         commandMap.register("resetplaytime", new ResetPlaytimeCommand(databaseManager));
     }
 
@@ -113,20 +120,35 @@ public final class TrueConnective extends JavaPlugin implements Listener {
             player.sendMessage(infoMessageViewer);
         }
 
-        Bukkit.getScheduler().runTaskTimer(this, () -> checkPlaytime(player), 0L, 1200L);
+        // Schedule a task to check playtime every minute
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, () -> checkPlaytime(player), 0L, 1200L);
+        playerTasks.put(player.getUniqueId(), task);
     }
 
     private void checkPlaytime(Player player) {
         int playtime = databaseManager.getPlaytime(player);
-        if (playtime >= 60) {
-            TextComponent kickMessage = Component.text()
-                    .content("Du hast dein tägliches Spielzeitlimit erreicht! Du kannst morgen wieder spielen.")
-                    .color(TextColor.color(0xff0000))
-                    .decoration(TextDecoration.BOLD, true)
-                    .build();
-            player.kick(kickMessage);
+        if (player.hasPermission("trueconnective.creator")) {
+            if (playtime >= getConfig().getInt("creator.max-playtime")) {
+                TextComponent kickMessage = Component.text()
+                        .content("Du hast dein tägliches Spielzeitlimit erreicht! Du kannst morgen wieder spielen.")
+                        .color(TextColor.color(0xff0000))
+                        .decoration(TextDecoration.BOLD, true)
+                        .build();
+                player.kick(kickMessage);
+            } else {
+                databaseManager.updatePlaytime(player, playtime + 1);
+            }
         } else {
-            databaseManager.updatePlaytime(player, playtime + 1);
+            if (playtime >= getConfig().getInt("viewer.max-playtime")) {
+                TextComponent kickMessage = Component.text()
+                        .content("Du hast dein tägliches Spielzeitlimit erreicht! Du kannst morgen wieder spielen.")
+                        .color(TextColor.color(0xff0000))
+                        .decoration(TextDecoration.BOLD, true)
+                        .build();
+                player.kick(kickMessage);
+            } else {
+                databaseManager.updatePlaytime(player, playtime + 1);
+            }
         }
     }
 
@@ -136,5 +158,11 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         int playtime = databaseManager.getPlaytime(player);
         databaseManager.updatePlaytime(
                 player, playtime + (int) ((System.currentTimeMillis() - player.getLastLogin()) / 60000));
+
+        // Cancel the task when the player leaves
+        BukkitTask task = playerTasks.remove(player.getUniqueId());
+        if (task != null) {
+            task.cancel();
+        }
     }
 }

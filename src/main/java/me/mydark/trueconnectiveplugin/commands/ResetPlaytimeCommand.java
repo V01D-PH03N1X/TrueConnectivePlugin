@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import me.mydark.trueconnectiveplugin.TrueConnective;
 import me.mydark.trueconnectiveplugin.manager.DatabaseManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -24,15 +23,12 @@ import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 public class ResetPlaytimeCommand extends BukkitCommand implements TabCompleter {
-    private static Logger log;
     private static DatabaseManager databaseManager;
 
     public ResetPlaytimeCommand(DatabaseManager dbmanager) {
         super("resetplaytime");
-        log = TrueConnective.getLog();
         databaseManager = dbmanager;
     }
 
@@ -77,8 +73,23 @@ public class ResetPlaytimeCommand extends BukkitCommand implements TabCompleter 
                     }
                 }
             }
+        } else {
+            if (args.length != 1) {
+                sender.sendMessage("Usage: /resetplaytime <player>");
+                return false;
+            } else {
+                OfflinePlayer target = getServer().getOfflinePlayer(args[0]);
+                if (target == null) {
+                    sender.sendMessage("Player " + args[0] + " not found");
+                    return false;
+                } else {
+                    // Reset the playtime of the target player
+                    databaseManager.resetPlaytime(target);
+                    sender.sendMessage("Playtime of " + target.getName() + " has been reset");
+                    return true;
+                }
+            }
         }
-        return false;
     }
 
     @Override

@@ -1,0 +1,13 @@
+#********************************************************************************************
+# Author:      V01D-PH03N1X (PinguBasti), TrueConnective Paul & Stolle GbR
+# Project:     TrueConnective Paper Plugin
+# Description: Management Plugin for Paper Servers (Minecraft)
+#********************************************************************************************
+
+creator:
+  # Maximale Spielzeit für Creator, in Minuten angegeben
+  max-playtime: 180
+
+viewer:
+  # Maximale Spielzeit für Zuschauer, in Minuten angegeben
+  max-playtime: 30

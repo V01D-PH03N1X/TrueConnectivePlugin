@@ -29,17 +29,19 @@ import org.slf4j.Logger;
 public class RemainingPlaytimeCommand extends BukkitCommand implements TabCompleter {
     private static Logger log;
     private static DatabaseManager databaseManager;
+    private static TrueConnective instance;
 
-    public RemainingPlaytimeCommand(DatabaseManager dbmanager) {
+    public RemainingPlaytimeCommand(DatabaseManager dbmanager, TrueConnective plugin) {
         super("playtime");
         log = TrueConnective.getLog();
         databaseManager = dbmanager;
+        instance = plugin;
     }
 
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
-            if (!player.hasPermission("trueconnective.remainingplaytime")) {
+            if (!player.hasPermission("trueconnective.playtime.get")) {
                 TextComponent noPermission = Component.text()
                         .content("Du hast keine Berechtigung für diesen Befehl!")
                         .color(TextColor.color(0xef2121))
@@ -49,13 +51,25 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
             } else {
                 if (args.length != 1) {
                     // Get the remaining playtime of the target player
-                    int remainingPlaytime = (60 - databaseManager.getPlaytime(player));
-                    TextComponent remainingPlaytimeMessage = Component.text()
-                            .content("Du hast noch " + remainingPlaytime + " Minuten Spielzeit!")
-                            .color(TextColor.color(0x21ef21))
-                            .build();
-                    player.sendMessage(remainingPlaytimeMessage);
-                    return true;
+                    if (player.hasPermission("trueconnective.creator")) {
+                        int remainingPlaytime = (instance.getConfig().getInt("creator.max-playtime")
+                                - databaseManager.getPlaytime(player));
+                        TextComponent remainingPlaytimeMessage = Component.text()
+                                .content("Du hast noch " + remainingPlaytime + " Minuten Spielzeit!")
+                                .color(TextColor.color(0x21ef21))
+                                .build();
+                        player.sendMessage(remainingPlaytimeMessage);
+                        return true;
+                    } else {
+                        int remainingPlaytime = (instance.getConfig().getInt("viewer.max-playtime")
+                                - databaseManager.getPlaytime(player));
+                        TextComponent remainingPlaytimeMessage = Component.text()
+                                .content("Du hast noch " + remainingPlaytime + " Minuten Spielzeit!")
+                                .color(TextColor.color(0x21ef21))
+                                .build();
+                        player.sendMessage(remainingPlaytimeMessage);
+                        return true;
+                    }
                 } else {
                     Player target = player.getServer().getPlayer(args[0]);
                     if (target == null) {
@@ -67,7 +81,19 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
                         return false;
                     } else {
                         // Get the remaining playtime of the target player
-                        int remainingPlaytime = (60 - databaseManager.getPlaytime(player));
+                        if (target.hasPermission("trueconnective.creator")) {
+                            int remainingPlaytime = (instance.getConfig().getInt("creator.max-playtime")
+                                    - databaseManager.getPlaytime(player));
+                            TextComponent remainingPlaytimeMessage = Component.text()
+                                    .content("Spieler " + target.getName() + " hat noch " + remainingPlaytime
+                                            + " Minuten Spielzeit!")
+                                    .color(TextColor.color(0x21ef21))
+                                    .build();
+                            player.sendMessage(remainingPlaytimeMessage);
+                            return true;
+                        }
+                        int remainingPlaytime = (instance.getConfig().getInt("viewer.max-playtime")
+                                - databaseManager.getPlaytime(player));
                         TextComponent remainingPlaytimeMessage = Component.text()
                                 .content("Spieler " + target.getName() + " hat noch " + remainingPlaytime
                                         + " Minuten Spielzeit!")

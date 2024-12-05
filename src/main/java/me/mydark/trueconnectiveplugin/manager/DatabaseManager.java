@@ -8,6 +8,8 @@ package me.mydark.trueconnectiveplugin.manager;
 import java.io.File;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import lombok.Getter;
 import me.mydark.trueconnectiveplugin.TrueConnective;
 import org.bukkit.OfflinePlayer;
@@ -21,13 +23,13 @@ public class DatabaseManager {
 
     private static Logger log;
 
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
     public DatabaseManager(TrueConnective instance) {
         log = TrueConnective.getLog();
 
         // Initialize Database and Tables.
         initializeDatabase(instance);
-        initializeTikTokTable();
-        initializePlayerTimesTable();
     }
 
     private void initializeDatabase(TrueConnective plugin) {
@@ -43,6 +45,9 @@ public class DatabaseManager {
         }
         // Connect to the database.
         connect();
+
+        initializeTikTokTable();
+        initializePlayerTimesTable();
     }
 
     private void connect() {
@@ -145,9 +150,10 @@ public class DatabaseManager {
         String uuid = player.getUniqueId().toString();
         try {
             PreparedStatement statement = connection.prepareStatement(
-                    "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, DATE('now'))");
+                    "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, ?)");
             statement.setString(1, uuid);
             statement.setInt(2, playtime);
+            statement.setString(3, LocalDate.now().format(DATE_FORMATTER));
             statement.executeUpdate();
             statement.close();
         } catch (SQLException e) {
@@ -158,9 +164,10 @@ public class DatabaseManager {
     public void resetPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
         try {
-            PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE PlayerTimes SET playtime = 0, last_login = DATE('now') WHERE uuid = ?");
-            statement.setString(1, uuid);
+            PreparedStatement statement =
+                    connection.prepareStatement("UPDATE PlayerTimes SET playtime = 0, last_login = ? WHERE uuid = ?");
+            statement.setString(1, LocalDate.now().format(DATE_FORMATTER));
+            statement.setString(2, uuid);
             statement.executeUpdate();
             statement.close();
         } catch (SQLException e) {
@@ -177,8 +184,14 @@ public class DatabaseManager {
             statement.setString(1, uuid);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                Date lastLogin = resultSet.getDate("last_login");
-                isNewDay = !lastLogin.toLocalDate().equals(LocalDate.now());
+                String lastLoginStr = resultSet.getString("last_login");
+                try {
+                    LocalDate lastLogin = LocalDate.parse(lastLoginStr, DATE_FORMATTER);
+                    isNewDay = !lastLogin.equals(LocalDate.now());
+                } catch (DateTimeParseException e) {
+                    log.error("Error parsing last login date: {}", e.getMessage());
+                    isNewDay = true; // Treat as new day if parsing fails
+                }
             } else {
                 isNewDay = true;
             }

@@ -17,14 +17,30 @@ commands:
     usage: /ttconnect <player> <tiktok_username>
     permission: trueconnective.ttconnect
     aliases: [ttc]
+  playtime:
+    description: Shows the remaining Playtime of a Player.
+    usage: /playtime <player>
+    permission: trueconnective.playtime.get
+    aliases: [pt]
+  resetplaytime:
+    description: Resets the Playtime of a Player.
+    usage: /resetplaytime <player>
+    permission: trueconnective.playtime.reset
+    aliases: [rpt]
 
 permissions:
     trueconnective.menu:
         description: Allows access to TrueConnective Menu.
+        default: true
+    trueconnective.playtime.get:
+        description: Allows to see the Playtime of a Player.
         default: true
     trueconnective.creator:
       description: Signals that the player is a creator.
       default: false
     trueconnective.ttconnect:
       description: Allows to connect a player with a tiktok Account.
+      default: false
+    trueconnective.playtime.reset:
+      description: Allows to reset the Playtime of a Player.
       default: false
