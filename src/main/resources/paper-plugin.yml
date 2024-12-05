@@ -1,8 +1,30 @@
-name: TrueConnectivePlugin
-version: '1.0-SNAPSHOT'
-main: me.mydark.trueconnectiveplugin.TrueConnectivePlugin
+name: TrueConnective
+version: '${version}'
+main: me.mydark.trueconnectiveplugin.TrueConnective
 api-version: '1.21'
 prefix: TrueConnectivePlugin
 load: STARTUP
 authors: [ V01D-PH03N1X (PinguBasti), TrueConnective ]
-description: Ein einfaches Plugin, welches bestimmte PermissionGroups nach bestimmten Zeiten kickt. 
+description: TrueConnective Management Plugin.
+commands:
+  trueconnective:
+    description: Opens TrueConnective Menu.
+    usage: /trueconnective
+    permission: trueconnective.menu
+    aliases: [tc]
+  ttconnect:
+    description: Connects your TikTok Account with the Server.
+    usage: /ttconnect <player> <tiktok_username>
+    permission: trueconnective.ttconnect
+    aliases: [ttc]
+
+permissions:
+    trueconnective.menu:
+        description: Allows access to TrueConnective Menu.
+        default: true
+    trueconnective.creator:
+      description: Signals that the player is a creator.
+      default: false
+    trueconnective.ttconnect:
+      description: Allows to connect a player with a tiktok Account.
+      default: false

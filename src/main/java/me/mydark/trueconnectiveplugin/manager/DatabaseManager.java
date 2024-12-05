@@ -3,10 +3,11 @@
 // Project:     TrueConnective Paper Plugin
 // Description: Management Plugin for Paper Servers (Minecraft)
 //********************************************************************************************
-package me.mydark.trueconnectiveplugin.utils;
+package me.mydark.trueconnectiveplugin.manager;
 
 import java.io.File;
 import java.sql.*;
+import java.time.LocalDate;
 import lombok.Getter;
 import me.mydark.trueconnectiveplugin.TrueConnective;
 import org.bukkit.OfflinePlayer;
@@ -26,6 +27,7 @@ public class DatabaseManager {
         // Initialize Database and Tables.
         initializeDatabase(instance);
         initializeTikTokTable();
+        initializePlayerTimesTable();
     }
 
     private void initializeDatabase(TrueConnective plugin) {
@@ -53,10 +55,12 @@ public class DatabaseManager {
         }
     }
 
+    /*
+     * Database TikTok Area
+     */
     private void initializeTikTokTable() {
         try {
             Statement statement = connection.createStatement();
-            // Create TikTokPlayers table if not exists with columns uuid as primary key and TikTok Username.
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS TikTokPlayers (uuid TEXT PRIMARY KEY, username TEXT)");
             statement.close();
         } catch (SQLException e) {
@@ -103,5 +107,85 @@ public class DatabaseManager {
         } catch (SQLException e) {
             log.error("Failed to set TikTok username: {}", e.getMessage());
         }
+    }
+
+    /*
+     * Database PlayerTimes Area
+     */
+    private void initializePlayerTimesTable() {
+        try {
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)");
+            statement.close();
+        } catch (SQLException e) {
+            log.error("Failed to initialize PlayerTimes table: {}", e.getMessage());
+        }
+    }
+
+    public int getPlaytime(OfflinePlayer player) {
+        String uuid = player.getUniqueId().toString();
+        int playtime = 0;
+        try {
+            PreparedStatement statement =
+                    connection.prepareStatement("SELECT playtime FROM PlayerTimes WHERE uuid = ?");
+            statement.setString(1, uuid);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                playtime = resultSet.getInt("playtime");
+            }
+            statement.close();
+        } catch (SQLException e) {
+            log.error("Failed to get playtime: {}", e.getMessage());
+        }
+        return playtime;
+    }
+
+    public void updatePlaytime(OfflinePlayer player, int playtime) {
+        String uuid = player.getUniqueId().toString();
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, DATE('now'))");
+            statement.setString(1, uuid);
+            statement.setInt(2, playtime);
+            statement.executeUpdate();
+            statement.close();
+        } catch (SQLException e) {
+            log.error("Failed to update playtime: {}", e.getMessage());
+        }
+    }
+
+    public void resetPlaytime(OfflinePlayer player) {
+        String uuid = player.getUniqueId().toString();
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE PlayerTimes SET playtime = 0, last_login = DATE('now') WHERE uuid = ?");
+            statement.setString(1, uuid);
+            statement.executeUpdate();
+            statement.close();
+        } catch (SQLException e) {
+            log.error("Failed to reset playtime: {}", e.getMessage());
+        }
+    }
+
+    public boolean isNewDay(OfflinePlayer player) {
+        String uuid = player.getUniqueId().toString();
+        boolean isNewDay = false;
+        try {
+            PreparedStatement statement =
+                    connection.prepareStatement("SELECT last_login FROM PlayerTimes WHERE uuid = ?");
+            statement.setString(1, uuid);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                Date lastLogin = resultSet.getDate("last_login");
+                isNewDay = !lastLogin.toLocalDate().equals(LocalDate.now());
+            } else {
+                isNewDay = true;
+            }
+            statement.close();
+        } catch (SQLException e) {
+            log.error("Failed to check if new day: {}", e.getMessage());
+        }
+        return isNewDay;
     }
 }

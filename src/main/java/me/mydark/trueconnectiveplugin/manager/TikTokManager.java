@@ -3,7 +3,7 @@
 // Project:     TrueConnective Paper Plugin
 // Description: Management Plugin for Paper Servers (Minecraft)
 //********************************************************************************************
-package me.mydark.trueconnectiveplugin.utils;
+package me.mydark.trueconnectiveplugin.manager;
 
 import io.github.jwdeveloper.tiktok.TikTokLive;
 import me.mydark.trueconnectiveplugin.TrueConnective;
