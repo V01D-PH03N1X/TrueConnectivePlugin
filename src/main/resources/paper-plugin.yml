@@ -1,0 +1,8 @@
+name: TrueConnectivePlugin
+version: '1.0-SNAPSHOT'
+main: me.mydark.trueconnectiveplugin.TrueConnectivePlugin
+api-version: '1.21'
+prefix: TrueConnectivePlugin
+load: STARTUP
+authors: [ V01D-PH03N1X (PinguBasti), TrueConnective ]
+description: Ein einfaches Plugin, welches bestimmte PermissionGroups nach bestimmten Zeiten kickt. 
