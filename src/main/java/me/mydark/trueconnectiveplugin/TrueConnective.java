@@ -42,6 +42,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
     private TikTokManager tikTokManager;
 
     private Map<UUID, BukkitTask> playerTasks = new HashMap<>();
+    private Map<UUID, BukkitTask> actionBarTasks = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -93,36 +94,66 @@ public final class TrueConnective extends JavaPlugin implements Listener {
                 player.kick(kickMessage);
             }
         }
-        // Check if player has the Permission "Viewer"
-        if (player.hasPermission("trueconnective.viewer")) {
-            TextComponent welcomeMessageViewer = Component.text()
-                    .content("Willkommen auf dem Minecraft Server von")
-                    .color(TextColor.color(0x3F9EFF))
-                    .decoration(TextDecoration.BOLD, true)
-                    .append(Component.text()
-                            .content(" TrueConnective ")
-                            .color(TextColor.color(0xEFEFEF))
-                            .decoration(TextDecoration.BOLD, true)
-                            .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
-                    .build();
 
-            TextComponent infoMessageViewer = Component.text()
-                    .content("Du möchtest mehr über TrueConnective erfahren? ")
-                    .color(TextColor.color(0x3F9EFF))
-                    .append(Component.text()
-                            .content("Klicke hier!")
-                            .color(TextColor.color(0xFF9E3f))
-                            .decoration(TextDecoration.BOLD, true)
-                            .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
-                    .build();
+        TextComponent welcomeMessageViewer = Component.text()
+                .content("Willkommen auf dem Minecraft Server von")
+                .color(TextColor.color(0x3F9EFF))
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text()
+                        .content(" TrueConnective ")
+                        .color(TextColor.color(0xEFEFEF))
+                        .decoration(TextDecoration.BOLD, true)
+                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
+                .build();
 
-            player.sendMessage(welcomeMessageViewer);
-            player.sendMessage(infoMessageViewer);
-        }
+        TextComponent infoMessageViewer = Component.text()
+                .content("Du möchtest mehr über TrueConnective erfahren? ")
+                .color(TextColor.color(0x3F9EFF))
+                .append(Component.text()
+                        .content("Klicke hier!")
+                        .color(TextColor.color(0xFF9E3f))
+                        .decoration(TextDecoration.BOLD, true)
+                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
+                .build();
+
+        player.sendMessage(welcomeMessageViewer);
+        player.sendMessage(infoMessageViewer);
 
         // Schedule a task to check playtime every minute
-        BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, () -> checkPlaytime(player), 0L, 1200L);
-        playerTasks.put(player.getUniqueId(), task);
+        BukkitTask playtimeCheck =
+                Bukkit.getScheduler().runTaskTimer(this, () -> checkPlaytime(player), 0L, 1200L); // 1200L = 1 minute
+        playerTasks.put(player.getUniqueId(), playtimeCheck);
+
+        // Schedule a task to update the action bar every second
+        BukkitTask task =
+                Bukkit.getScheduler().runTaskTimer(this, () -> actionBarTask(player), 0L, 20L); // 20L = 1 second
+        actionBarTasks.put(player.getUniqueId(), task);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+
+        // Berechne die Spielzeit basierend auf der letzten Anmeldung
+        long lastLogin = player.getLastLogin();
+        long currentTime = System.currentTimeMillis();
+        int playtime = databaseManager.getPlaytime(player);
+        int additionalPlaytime = (int) ((currentTime - lastLogin) / 60000); // Minuten
+
+        // Aktualisiere die Spielzeit in der Datenbank
+        databaseManager.updatePlaytime(player, playtime + additionalPlaytime);
+
+        // Beende die geplanten Aufgaben, wenn der Spieler den Server verlässt
+        BukkitTask playTimeCheck = playerTasks.remove(playerUUID);
+        BukkitTask actionBarTask = actionBarTasks.remove(playerUUID);
+
+        if (playTimeCheck != null) {
+            playTimeCheck.cancel();
+        }
+        if (actionBarTask != null) {
+            actionBarTask.cancel();
+        }
     }
 
     private void checkPlaytime(Player player) {
@@ -152,17 +183,25 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
+    private void actionBarTask(Player player) {
         int playtime = databaseManager.getPlaytime(player);
-        databaseManager.updatePlaytime(
-                player, playtime + (int) ((System.currentTimeMillis() - player.getLastLogin()) / 60000));
-
-        // Cancel the task when the player leaves
-        BukkitTask task = playerTasks.remove(player.getUniqueId());
-        if (task != null) {
-            task.cancel();
+        if (player.hasPermission("trueconnective.creator")) {
+            player.sendActionBar(formatRemainingTime(getConfig().getInt("creator.max-playtime") - playtime));
+        } else {
+            player.sendActionBar(formatRemainingTime(getConfig().getInt("viewer.max-playtime") - playtime));
         }
+    }
+
+    private TextComponent formatRemainingTime(int minutes) {
+        int hours = minutes / 60;
+        int remainingMinutes = minutes % 60;
+        return Component.text()
+                .content("Verbleibende Spielzeit: ")
+                .color(TextColor.color(0x3F9EFF))
+                .append(Component.text()
+                        .content(hours + " : " + remainingMinutes)
+                        .color(TextColor.color(0x1f5Eff))
+                        .decoration(TextDecoration.BOLD, true))
+                .build();
     }
 }
