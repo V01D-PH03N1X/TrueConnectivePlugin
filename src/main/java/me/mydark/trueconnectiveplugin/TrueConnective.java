@@ -102,7 +102,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         }
         // Check if player has the Permission "Creator"
         if (player.hasPermission("trueconnective.creator")) {
-            String tiktokusername = databaseManager.getTiktokUsername(player);
+            String tiktokusername = databaseManager.getTiktokUsername(player).orElse(null);
             if (!tikTokManager.checkTikTokLive(tiktokusername)) {
                 TextComponent kickMessage = Component.text()
                         .content("Du musst Live sein um den Server zu betreten!")

@@ -10,6 +10,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Optional;
 import lombok.Getter;
 import me.mydark.trueconnectiveplugin.TrueConnective;
 import org.bukkit.OfflinePlayer;
@@ -24,6 +25,20 @@ public class DatabaseManager {
     private static Logger log;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final String CREATE_TIKTOK_TABLE_SQL =
+            "CREATE TABLE IF NOT EXISTS TikTokPlayers (uuid TEXT PRIMARY KEY, username TEXT)";
+    private static final String CREATE_PLAYER_TIMES_TABLE_SQL =
+            "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)";
+    private static final String SELECT_TIKTOK_USERNAME_SQL = "SELECT username FROM TikTokPlayers WHERE uuid = ?";
+    private static final String INSERT_OR_REPLACE_TIKTOK_USERNAME_SQL =
+            "INSERT OR REPLACE INTO TikTokPlayers (uuid, username) VALUES (?, ?)";
+    private static final String SELECT_PLAYTIME_SQL = "SELECT playtime FROM PlayerTimes WHERE uuid = ?";
+    private static final String INSERT_OR_REPLACE_PLAYTIME_SQL =
+            "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, ?)";
+    private static final String UPDATE_PLAYTIME_SQL =
+            "UPDATE PlayerTimes SET playtime = 0, last_login = ? WHERE uuid = ?";
+    private static final String SELECT_LAST_LOGIN_SQL = "SELECT last_login FROM PlayerTimes WHERE uuid = ?";
 
     /**
      * Constructor for DatabaseManager.
@@ -82,10 +97,8 @@ public class DatabaseManager {
      * Initializes the TikTokPlayers table if it doesn't exist.
      */
     private void initializeTikTokTable() {
-        try {
-            Statement statement = connection.createStatement();
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS TikTokPlayers (uuid TEXT PRIMARY KEY, username TEXT)");
-            statement.close();
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(CREATE_TIKTOK_TABLE_SQL);
         } catch (SQLException e) {
             log.error("Failed to initialize TikTok table: {}", e.getMessage());
         }
@@ -97,28 +110,23 @@ public class DatabaseManager {
      * @param player The player whose TikTok username is to be retrieved.
      * @return The TikTok username of the player, or null if not found.
      */
-    public String getTiktokUsername(Player player) {
+    public Optional<String> getTiktokUsername(Player player) {
         String uuid = player.getUniqueId().toString();
-        String username = null;
-        // Get TikTok Username from database using player's UUID. If not found, return null.
-        try {
-            PreparedStatement statement =
-                    connection.prepareStatement("SELECT username FROM TikTokPlayers WHERE uuid = ?");
+        try (PreparedStatement statement = connection.prepareStatement(SELECT_TIKTOK_USERNAME_SQL)) {
             statement.setString(1, uuid);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                username = resultSet.getString("username");
-                log.info("Player {} has TikTok username {}", player.getName(), username);
-                statement.close();
-                return username;
-            } else {
-                log.info("Player {} has no TikTok username", player.getName());
-                statement.close();
-                return null;
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    String username = resultSet.getString("username");
+                    log.info("Player {} has TikTok username {}", player.getName(), username);
+                    return Optional.of(username);
+                } else {
+                    log.info("Player {} has no TikTok username", player.getName());
+                    return Optional.empty();
+                }
             }
         } catch (SQLException e) {
             log.error("Failed to get TikTok username: {}", e.getMessage());
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -130,14 +138,10 @@ public class DatabaseManager {
      */
     public void setTiktokUsername(OfflinePlayer player, String username) {
         String uuid = player.getUniqueId().toString();
-        // Set TikTok Username in database using player's UUID.
-        try {
-            PreparedStatement statement =
-                    connection.prepareStatement("INSERT OR REPLACE INTO TikTokPlayers (uuid, username) VALUES (?, ?)");
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_OR_REPLACE_TIKTOK_USERNAME_SQL)) {
             statement.setString(1, uuid);
             statement.setString(2, username);
             statement.executeUpdate();
-            statement.close();
             log.info("Player {} has set TikTok username {}", player.getName(), username);
         } catch (SQLException e) {
             log.error("Failed to set TikTok username: {}", e.getMessage());
@@ -152,11 +156,8 @@ public class DatabaseManager {
      * Initializes the PlayerTimes table if it doesn't exist.
      */
     private void initializePlayerTimesTable() {
-        try {
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(
-                    "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)");
-            statement.close();
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(CREATE_PLAYER_TIMES_TABLE_SQL);
         } catch (SQLException e) {
             log.error("Failed to initialize PlayerTimes table: {}", e.getMessage());
         }
@@ -170,20 +171,17 @@ public class DatabaseManager {
      */
     public int getPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
-        int playtime = 0;
-        try {
-            PreparedStatement statement =
-                    connection.prepareStatement("SELECT playtime FROM PlayerTimes WHERE uuid = ?");
+        try (PreparedStatement statement = connection.prepareStatement(SELECT_PLAYTIME_SQL)) {
             statement.setString(1, uuid);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                playtime = resultSet.getInt("playtime");
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("playtime");
+                }
             }
-            statement.close();
         } catch (SQLException e) {
             log.error("Failed to get playtime: {}", e.getMessage());
         }
-        return playtime;
+        return 0;
     }
 
     /**
@@ -194,14 +192,11 @@ public class DatabaseManager {
      */
     public void updatePlaytime(OfflinePlayer player, int playtime) {
         String uuid = player.getUniqueId().toString();
-        try {
-            PreparedStatement statement = connection.prepareStatement(
-                    "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, ?)");
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_OR_REPLACE_PLAYTIME_SQL)) {
             statement.setString(1, uuid);
             statement.setInt(2, playtime);
             statement.setString(3, LocalDate.now().format(DATE_FORMATTER));
             statement.executeUpdate();
-            statement.close();
         } catch (SQLException e) {
             log.error("Failed to update playtime: {}", e.getMessage());
         }
@@ -214,13 +209,10 @@ public class DatabaseManager {
      */
     public void resetPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
-        try {
-            PreparedStatement statement =
-                    connection.prepareStatement("UPDATE PlayerTimes SET playtime = 0, last_login = ? WHERE uuid = ?");
+        try (PreparedStatement statement = connection.prepareStatement(UPDATE_PLAYTIME_SQL)) {
             statement.setString(1, LocalDate.now().format(DATE_FORMATTER));
             statement.setString(2, uuid);
             statement.executeUpdate();
-            statement.close();
         } catch (SQLException e) {
             log.error("Failed to reset playtime: {}", e.getMessage());
         }
@@ -234,28 +226,25 @@ public class DatabaseManager {
      */
     public boolean isNewDay(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
-        boolean isNewDay = false;
-        try {
-            PreparedStatement statement =
-                    connection.prepareStatement("SELECT last_login FROM PlayerTimes WHERE uuid = ?");
+        try (PreparedStatement statement = connection.prepareStatement(SELECT_LAST_LOGIN_SQL)) {
             statement.setString(1, uuid);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                String lastLoginStr = resultSet.getString("last_login");
-                try {
-                    LocalDate lastLogin = LocalDate.parse(lastLoginStr, DATE_FORMATTER);
-                    isNewDay = !lastLogin.equals(LocalDate.now());
-                } catch (DateTimeParseException e) {
-                    log.error("Error parsing last login date: {}", e.getMessage());
-                    isNewDay = true; // Treat as new day if parsing fails
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    String lastLoginStr = resultSet.getString("last_login");
+                    try {
+                        LocalDate lastLogin = LocalDate.parse(lastLoginStr, DATE_FORMATTER);
+                        return !lastLogin.equals(LocalDate.now());
+                    } catch (DateTimeParseException e) {
+                        log.error("Error parsing last login date: {}", e.getMessage());
+                        return true; // Treat as new day if parsing fails
+                    }
+                } else {
+                    return true;
                 }
-            } else {
-                isNewDay = true;
             }
-            statement.close();
         } catch (SQLException e) {
             log.error("Failed to check if new day: {}", e.getMessage());
         }
-        return isNewDay;
+        return false;
     }
 }
