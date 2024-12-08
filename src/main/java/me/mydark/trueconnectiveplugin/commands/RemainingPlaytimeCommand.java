@@ -26,11 +26,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+/**
+ * Command to get the remaining playtime of a player.
+ */
 public class RemainingPlaytimeCommand extends BukkitCommand implements TabCompleter {
     private static Logger log;
     private static DatabaseManager databaseManager;
     private static TrueConnective instance;
 
+    /**
+     * Constructor for RemainingPlaytimeCommand.
+     *
+     * @param dbmanager The DatabaseManager instance to interact with the database.
+     * @param plugin The TrueConnective plugin instance.
+     */
     public RemainingPlaytimeCommand(DatabaseManager dbmanager, TrueConnective plugin) {
         super("playtime");
         log = TrueConnective.getLog();
@@ -38,6 +47,14 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
         instance = plugin;
     }
 
+    /**
+     * Executes the playtime command.
+     *
+     * @param sender The sender of the command.
+     * @param commandLabel The label of the command.
+     * @param args The arguments passed to the command.
+     * @return true if the command was successful, false otherwise.
+     */
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
@@ -50,7 +67,7 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
                 return false;
             } else {
                 if (args.length != 1) {
-                    // Get the remaining playtime of the target player
+                    // Get the remaining playtime of the player
                     if (player.hasPermission("trueconnective.creator")) {
                         int remainingPlaytime = (instance.getConfig().getInt("creator.max-playtime")
                                 - databaseManager.getPlaytime(player));
@@ -109,6 +126,15 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
         return false;
     }
 
+    /**
+     * Provides tab completion for the playtime command.
+     *
+     * @param sender The sender of the command.
+     * @param command The command being executed.
+     * @param label The label of the command.
+     * @param args The arguments passed to the command.
+     * @return A list of possible completions for the final argument, or null to default to the command executor.
+     */
     @Override
     public @Nullable List<String> onTabComplete(
             @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {

@@ -25,6 +25,12 @@ public class DatabaseManager {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /**
+     * Constructor for DatabaseManager.
+     * Initializes the database and tables.
+     *
+     * @param instance The instance of the TrueConnective plugin.
+     */
     public DatabaseManager(TrueConnective instance) {
         log = TrueConnective.getLog();
 
@@ -32,6 +38,11 @@ public class DatabaseManager {
         initializeDatabase(instance);
     }
 
+    /**
+     * Initializes the database and tables.
+     *
+     * @param plugin The instance of the TrueConnective plugin.
+     */
     private void initializeDatabase(TrueConnective plugin) {
         File pluginFolder = plugin.getDataFolder(); // this is the default plugin directory
 
@@ -50,6 +61,9 @@ public class DatabaseManager {
         initializePlayerTimesTable();
     }
 
+    /**
+     * Establishes a connection to the SQLite database.
+     */
     private void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
@@ -63,6 +77,10 @@ public class DatabaseManager {
     /*
      * Database TikTok Area
      */
+
+    /**
+     * Initializes the TikTokPlayers table if it doesn't exist.
+     */
     private void initializeTikTokTable() {
         try {
             Statement statement = connection.createStatement();
@@ -73,6 +91,12 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Retrieves the TikTok username for a player.
+     *
+     * @param player The player whose TikTok username is to be retrieved.
+     * @return The TikTok username of the player, or null if not found.
+     */
     public String getTiktokUsername(Player player) {
         String uuid = player.getUniqueId().toString();
         String username = null;
@@ -98,6 +122,12 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Sets the TikTok username for a player.
+     *
+     * @param player   The player whose TikTok username is to be set.
+     * @param username The TikTok username to be set.
+     */
     public void setTiktokUsername(OfflinePlayer player, String username) {
         String uuid = player.getUniqueId().toString();
         // Set TikTok Username in database using player's UUID.
@@ -117,6 +147,10 @@ public class DatabaseManager {
     /*
      * Database PlayerTimes Area
      */
+
+    /**
+     * Initializes the PlayerTimes table if it doesn't exist.
+     */
     private void initializePlayerTimesTable() {
         try {
             Statement statement = connection.createStatement();
@@ -128,6 +162,12 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Retrieves the playtime for a player.
+     *
+     * @param player The player whose playtime is to be retrieved.
+     * @return The playtime of the player in minutes.
+     */
     public int getPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
         int playtime = 0;
@@ -146,6 +186,12 @@ public class DatabaseManager {
         return playtime;
     }
 
+    /**
+     * Updates the playtime for a player.
+     *
+     * @param player   The player whose playtime is to be updated.
+     * @param playtime The new playtime to be set.
+     */
     public void updatePlaytime(OfflinePlayer player, int playtime) {
         String uuid = player.getUniqueId().toString();
         try {
@@ -161,6 +207,11 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Resets the playtime for a player.
+     *
+     * @param player The player whose playtime is to be reset.
+     */
     public void resetPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
         try {
@@ -175,6 +226,12 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Checks if it is a new day since the player's last login.
+     *
+     * @param player The player to check.
+     * @return True if it is a new day, false otherwise.
+     */
     public boolean isNewDay(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
         boolean isNewDay = false;

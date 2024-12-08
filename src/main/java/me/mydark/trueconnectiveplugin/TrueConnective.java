@@ -31,6 +31,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.slf4j.Logger;
 
+/**
+ * Main class for the TrueConnective plugin.
+ * This class handles the initialization and management of the plugin.
+ */
 public final class TrueConnective extends JavaPlugin implements Listener {
     @Getter
     private static TrueConnective instance;
@@ -44,6 +48,10 @@ public final class TrueConnective extends JavaPlugin implements Listener {
     private Map<UUID, BukkitTask> playerTasks = new HashMap<>();
     private Map<UUID, BukkitTask> actionBarTasks = new HashMap<>();
 
+    /**
+     * Called when the plugin is enabled.
+     * Initializes the plugin, sets up the database, registers events and commands.
+     */
     @Override
     public void onEnable() {
         synchronized (this) {
@@ -60,10 +68,10 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         databaseManager = new DatabaseManager(this);
         tikTokManager = new TikTokManager();
 
-        // register Events
+        // Register events
         getServer().getPluginManager().registerEvents(this, this);
 
-        // register Commands
+        // Register commands
         CommandMap commandMap = Bukkit.getCommandMap();
         commandMap.register("trueconnective", new TrueConnectiveCommand());
         commandMap.register("ttconect", new ConnectTikTokUsernameCommand(databaseManager));
@@ -71,11 +79,21 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         commandMap.register("resetplaytime", new ResetPlaytimeCommand(databaseManager));
     }
 
+    /**
+     * Called when the plugin is disabled.
+     * Executes any necessary cleanup.
+     */
     @Override
     public void onDisable() {
         // Execute on plugin disable
     }
 
+    /**
+     * Event handler for player join events.
+     * Resets playtime if it's a new day and checks if the player is live on TikTok.
+     *
+     * @param event The player join event.
+     */
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -130,21 +148,27 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         actionBarTasks.put(player.getUniqueId(), task);
     }
 
+    /**
+     * Event handler for player quit events.
+     * Updates the player's playtime and cancels any scheduled tasks.
+     *
+     * @param event The player quit event.
+     */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         UUID playerUUID = player.getUniqueId();
 
-        // Berechne die Spielzeit basierend auf der letzten Anmeldung
+        // Calculate playtime based on the last login
         long lastLogin = player.getLastLogin();
         long currentTime = System.currentTimeMillis();
         int playtime = databaseManager.getPlaytime(player);
-        int additionalPlaytime = (int) ((currentTime - lastLogin) / 60000); // Minuten
+        int additionalPlaytime = (int) ((currentTime - lastLogin) / 60000); // Minutes
 
-        // Aktualisiere die Spielzeit in der Datenbank
+        // Update playtime in the database
         databaseManager.updatePlaytime(player, playtime + additionalPlaytime);
 
-        // Beende die geplanten Aufgaben, wenn der Spieler den Server verlässt
+        // Cancel scheduled tasks when the player leaves the server
         BukkitTask playTimeCheck = playerTasks.remove(playerUUID);
         BukkitTask actionBarTask = actionBarTasks.remove(playerUUID);
 
@@ -156,6 +180,11 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         }
     }
 
+    /**
+     * Checks the player's playtime and kicks them if they exceed the daily limit.
+     *
+     * @param player The player to check.
+     */
     private void checkPlaytime(Player player) {
         int playtime = databaseManager.getPlaytime(player);
         if (player.hasPermission("trueconnective.creator")) {
@@ -183,6 +212,11 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         }
     }
 
+    /**
+     * Updates the action bar with the remaining playtime for the player.
+     *
+     * @param player The player to update.
+     */
     private void actionBarTask(Player player) {
         int playtime = databaseManager.getPlaytime(player);
         if (player.hasPermission("trueconnective.creator")) {
@@ -192,6 +226,12 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         }
     }
 
+    /**
+     * Formats the remaining playtime as a text component.
+     *
+     * @param minutes The remaining playtime in minutes.
+     * @return The formatted text component.
+     */
     private TextComponent formatRemainingTime(int minutes) {
         int hours = minutes / 60;
         int remainingMinutes = minutes % 60;

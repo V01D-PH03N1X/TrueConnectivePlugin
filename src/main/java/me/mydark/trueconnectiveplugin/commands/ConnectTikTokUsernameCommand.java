@@ -25,10 +25,18 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+/**
+ * Command to connect a TikTok username to a player.
+ */
 public class ConnectTikTokUsernameCommand extends BukkitCommand implements TabCompleter {
     private static Logger log;
     private static DatabaseManager databaseManager;
-    // Constructor for the command
+
+    /**
+     * Constructor for ConnectTikTokUsernameCommand.
+     *
+     * @param dbmanager The DatabaseManager instance to interact with the database.
+     */
     public ConnectTikTokUsernameCommand(DatabaseManager dbmanager) {
         super("ttconect");
         databaseManager = dbmanager;
@@ -36,6 +44,14 @@ public class ConnectTikTokUsernameCommand extends BukkitCommand implements TabCo
         log = TrueConnective.getLog();
     }
 
+    /**
+     * Executes the ttconect command.
+     *
+     * @param sender The sender of the command.
+     * @param commandLabel The label of the command.
+     * @param args The arguments passed to the command.
+     * @return true if the command was successful, false otherwise.
+     */
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         // First argument is the target player and the second argument is the TikTok username
@@ -98,6 +114,15 @@ public class ConnectTikTokUsernameCommand extends BukkitCommand implements TabCo
         return true;
     }
 
+    /**
+     * Provides tab completion for the ttconect command.
+     *
+     * @param sender The sender of the command.
+     * @param command The command being executed.
+     * @param alias The alias used for the command.
+     * @param args The arguments passed to the command.
+     * @return A list of possible completions for the first argument, or an empty list if no completions are found.
+     */
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {

@@ -24,14 +24,30 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Command to reset the playtime of a player.
+ */
 public class ResetPlaytimeCommand extends BukkitCommand implements TabCompleter {
     private static DatabaseManager databaseManager;
 
+    /**
+     * Constructor for ResetPlaytimeCommand.
+     *
+     * @param dbmanager The DatabaseManager instance to interact with the database.
+     */
     public ResetPlaytimeCommand(DatabaseManager dbmanager) {
         super("resetplaytime");
         databaseManager = dbmanager;
     }
 
+    /**
+     * Executes the reset playtime command.
+     *
+     * @param sender The sender of the command.
+     * @param commandLabel The label of the command.
+     * @param args The arguments passed to the command.
+     * @return true if the command was successful, false otherwise.
+     */
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
@@ -92,6 +108,15 @@ public class ResetPlaytimeCommand extends BukkitCommand implements TabCompleter 
         }
     }
 
+    /**
+     * Provides tab completion for the reset playtime command.
+     *
+     * @param sender The sender of the command.
+     * @param command The command being executed.
+     * @param label The label of the command.
+     * @param args The arguments passed to the command.
+     * @return A list of possible completions for the final argument, or null to default to the command executor.
+     */
     @Override
     public @Nullable List<String> onTabComplete(
             @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {

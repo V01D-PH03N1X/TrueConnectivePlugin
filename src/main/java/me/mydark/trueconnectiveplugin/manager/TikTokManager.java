@@ -9,14 +9,25 @@ import io.github.jwdeveloper.tiktok.TikTokLive;
 import me.mydark.trueconnectiveplugin.TrueConnective;
 import org.slf4j.Logger;
 
+/**
+ * Manager class for handling TikTok related operations.
+ */
 public class TikTokManager {
     private static Logger log;
 
+    /**
+     * Constructor for TikTokManager.
+     * Initializes the logger.
+     */
     public TikTokManager() {
         log = TrueConnective.getLog();
     }
+
     /**
-     * Check if the TikTok user is live or not
+     * Checks if the TikTok user is live.
+     *
+     * @param username The TikTok username to check.
+     * @return true if the user is live, false otherwise.
      */
     public boolean checkTikTokLive(String username) {
         log.info("Checking if TikTok user {} is live", username);

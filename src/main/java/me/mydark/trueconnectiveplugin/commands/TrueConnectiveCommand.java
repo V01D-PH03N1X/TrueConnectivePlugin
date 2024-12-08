@@ -21,10 +21,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+/**
+ * Command to open the TrueConnective management GUI.
+ */
 public class TrueConnectiveCommand extends BukkitCommand {
 
     private static Logger log;
-    // Constructor for the command
+
+    /**
+     * Constructor for the TrueConnectiveCommand.
+     * Sets the command name and initializes the logger.
+     */
     public TrueConnectiveCommand() {
         // Set the command name
         super("trueconnective");
@@ -32,6 +39,15 @@ public class TrueConnectiveCommand extends BukkitCommand {
         log = TrueConnective.getLog();
     }
 
+    /**
+     * Executes the trueconnective command.
+     * Opens a GUI for the player to interact with TrueConnective management.
+     *
+     * @param sender The sender of the command.
+     * @param commandLabel The label of the command.
+     * @param args The arguments passed to the command.
+     * @return true if the command was successful, false otherwise.
+     */
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
@@ -76,6 +92,11 @@ public class TrueConnectiveCommand extends BukkitCommand {
         return false;
     }
 
+    /**
+     * Sends a message to the player with a clickable link to the TrueConnective website.
+     *
+     * @param player The player to send the message to.
+     */
     private void webTrueConnective(Player player) {
         TextComponent webPage = Component.text()
                 .content("Klicke hier um mehr über TrueConnective zu erfahren!")
