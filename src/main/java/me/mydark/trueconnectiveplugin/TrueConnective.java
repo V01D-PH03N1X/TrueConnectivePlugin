@@ -15,6 +15,7 @@ import me.mydark.trueconnectiveplugin.commands.ResetPlaytimeCommand;
 import me.mydark.trueconnectiveplugin.commands.TrueConnectiveCommand;
 import me.mydark.trueconnectiveplugin.manager.DatabaseManager;
 import me.mydark.trueconnectiveplugin.manager.TikTokManager;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -45,8 +46,11 @@ public final class TrueConnective extends JavaPlugin implements Listener {
     private DatabaseManager databaseManager;
     private TikTokManager tikTokManager;
 
-    private Map<UUID, BukkitTask> playerTasks = new HashMap<>();
-    private Map<UUID, BukkitTask> actionBarTasks = new HashMap<>();
+    private final Map<UUID, BukkitTask> playerTasks = new HashMap<>();
+    private final Map<UUID, BukkitTask> actionBarTasks = new HashMap<>();
+    private final Map<UUID, BukkitTask> bossBarTasks = new HashMap<>();
+
+    private final Map<UUID, BossBar> playerBossBars = new HashMap<>();
 
     /**
      * Called when the plugin is enabled.
@@ -142,10 +146,16 @@ public final class TrueConnective extends JavaPlugin implements Listener {
                 Bukkit.getScheduler().runTaskTimer(this, () -> checkPlaytime(player), 0L, 1200L); // 1200L = 1 minute
         playerTasks.put(player.getUniqueId(), playtimeCheck);
 
+        // Schedule a task to update the Bossbar every minute
+        BukkitTask bossbarTask =
+                Bukkit.getScheduler().runTaskTimer(this, () -> playtimeBossbarTask(player), 0L, 1200L); // 1200L = 1 minute
+        bossBarTasks.put(player.getUniqueId(), bossbarTask);
+
         // Schedule a task to update the action bar every second
         BukkitTask task =
                 Bukkit.getScheduler().runTaskTimer(this, () -> actionBarTask(player), 0L, 20L); // 20L = 1 second
         actionBarTasks.put(player.getUniqueId(), task);
+
     }
 
     /**
@@ -171,13 +181,14 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         // Cancel scheduled tasks when the player leaves the server
         BukkitTask playTimeCheck = playerTasks.remove(playerUUID);
         BukkitTask actionBarTask = actionBarTasks.remove(playerUUID);
+        BukkitTask bossBarTask = bossBarTasks.remove(playerUUID);
 
-        if (playTimeCheck != null) {
+        if (playTimeCheck != null)
             playTimeCheck.cancel();
-        }
-        if (actionBarTask != null) {
+        if (actionBarTask != null)
             actionBarTask.cancel();
-        }
+        if (bossBarTask != null)
+            bossBarTask.cancel();
     }
 
     /**
@@ -233,15 +244,85 @@ public final class TrueConnective extends JavaPlugin implements Listener {
      * @return The formatted text component.
      */
     private TextComponent formatRemainingTime(int minutes) {
-        int hours = minutes / 60;
-        int remainingMinutes = minutes % 60;
+        // Calculate remaining ours and minutes
+        // int hours = minutes / 60;
+        // int remainingMinutes = minutes % 60;
+
         return Component.text()
                 .content("Verbleibende Spielzeit: ")
-                .color(TextColor.color(0x3F9EFF))
+                .color(TextColor.color(0xDFDFDF))
+                .decoration(TextDecoration.BOLD, true)
                 .append(Component.text()
-                        .content(hours + " : " + remainingMinutes)
-                        .color(TextColor.color(0x1f5Eff))
-                        .decoration(TextDecoration.BOLD, true))
+                        .content(String.valueOf(minutes))
+                        .color(TextColor.color(0xEFEFEF)))
                 .build();
+    }
+
+    private void playtimeBossbarTask(Player player){
+        UUID playerUUID = player.getUniqueId();
+        int playtime = databaseManager.getPlaytime(player);
+        int maxPlaytime;
+
+        BossBar playtimeBossBar;
+        if (player.hasPermission("trueconnective.creator")){
+            maxPlaytime = getConfig().getInt("creator.max-playtime");
+            int remainingPlaytime = maxPlaytime - playtime;
+            float progress = getPercentage(maxPlaytime, remainingPlaytime);
+
+            if (playerBossBars.get(playerUUID) != null) {
+                updateBossBar(playerBossBars.get(playerUUID), formatRemainingTime(remainingPlaytime), progress);
+            } else {
+                playtimeBossBar = formatPlaytimeBossBar(formatRemainingTime(remainingPlaytime), progress);
+                playerBossBars.put(playerUUID, playtimeBossBar);
+                player.showBossBar(playtimeBossBar);
+            }
+        } else {
+            maxPlaytime = getConfig().getInt("viewer.max-playtime");
+            int remainingPlaytime = maxPlaytime - playtime;
+            float progress = getPercentage(maxPlaytime, remainingPlaytime);
+
+            if (playerBossBars.get(playerUUID) != null) {
+                updateBossBar(playerBossBars.get(playerUUID), formatRemainingTime(remainingPlaytime), progress);
+            }
+            else {
+                playtimeBossBar = formatPlaytimeBossBar(formatRemainingTime(remainingPlaytime), progress);
+                playerBossBars.put(playerUUID, playtimeBossBar);
+                player.showBossBar(playtimeBossBar);
+            }
+        }
+    }
+
+    private BossBar formatPlaytimeBossBar(TextComponent title, float progress){
+        BossBar playtimeBossBar;
+
+        if (progress < 0.33)
+            playtimeBossBar = BossBar.bossBar(title, progress, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+        else if (progress > 0.33 && progress < 0.66)
+            playtimeBossBar = BossBar.bossBar(title, progress, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+        else
+            playtimeBossBar = BossBar.bossBar(title, progress, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+
+        return playtimeBossBar;
+    }
+
+    private void updateBossBar(BossBar playerBossBar, TextComponent title, float progress){
+        playerBossBar.progress(progress);
+        playerBossBar.name(title);
+        if (progress < 0.33)
+            playerBossBar.color(BossBar.Color.RED);
+        if (progress > 0.33 && progress < 0.66)
+            playerBossBar.color(BossBar.Color.YELLOW);
+        if (progress > 0.66)
+            playerBossBar.color(BossBar.Color.GREEN);
+    }
+
+    /**
+     * Calculates the Percentage of the value in the range 0-1 (1 = 100%)
+     * @param max The maximal value (100%)
+     * @param value The actual value that you want to be calculated
+     * @return The percentage as float value between 0 and 1
+     */
+    private float getPercentage(int max, int value){
+        return ((float) (value / (max / 100)) / 100);
     }
 }
