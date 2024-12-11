@@ -35,12 +35,16 @@ permissions:
     trueconnective.playtime.get:
         description: Allows to see the Playtime of a Player.
         default: true
+    trueconnective.playtime.reset:
+      description: Allows to reset the Playtime of a Player.
+      default: false
+    trueconnective.playtime.bypass:
+      #TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+      description: Allows to bypass the PlayTimeLimit.
+      default: false
     trueconnective.creator:
       description: Signals that the player is a creator.
       default: false
     trueconnective.ttconnect:
       description: Allows to connect a player with a tiktok Account.
-      default: false
-    trueconnective.playtime.reset:
-      description: Allows to reset the Playtime of a Player.
       default: false
