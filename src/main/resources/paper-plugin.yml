@@ -29,8 +29,8 @@ commands:
     aliases: [rpt]
 
 permissions:
-    trueconnective.menu:
-        description: Allows access to TrueConnective Menu.
+    trueconnective.menu.*:
+        description: Allows access to TrueConnective Menus.
         default: true
     trueconnective.playtime.get:
         description: Allows to see the Playtime of a Player.
@@ -39,11 +39,13 @@ permissions:
       description: Allows to reset the Playtime of a Player.
       default: false
     trueconnective.playtime.bypass:
-      #TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
       description: Allows to bypass the PlayTimeLimit.
       default: false
     trueconnective.creator:
       description: Signals that the player is a creator.
+      default: false
+    trueconnective.viewer:
+      description: Signals that the player is a viewer.
       default: false
     trueconnective.ttconnect:
       description: Allows to connect a player with a tiktok Account.
