@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import me.mydark.trueconnectiveplugin.TrueConnective;
+import lombok.extern.slf4j.Slf4j;
 import me.mydark.trueconnectiveplugin.manager.DatabaseManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -23,13 +23,12 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
 
 /**
  * Command to connect a TikTok username to a player.
  */
+@Slf4j
 public class ConnectTikTokUsernameCommand extends BukkitCommand implements TabCompleter {
-    private static Logger log;
     private static DatabaseManager databaseManager;
 
     /**
@@ -40,8 +39,6 @@ public class ConnectTikTokUsernameCommand extends BukkitCommand implements TabCo
     public ConnectTikTokUsernameCommand(DatabaseManager dbmanager) {
         super("ttconect");
         databaseManager = dbmanager;
-        // get the logger from the main class
-        log = TrueConnective.getLog();
     }
 
     /**

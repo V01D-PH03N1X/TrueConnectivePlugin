@@ -12,33 +12,44 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import me.mydark.trueconnectiveplugin.TrueConnective;
+import me.mydark.trueconnectiveplugin.dto.PlayerSettings;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.slf4j.Logger;
 
+@Slf4j
 public class DatabaseManager {
 
     @Getter
     private Connection connection;
 
-    private static Logger log;
-
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    // TikTok SQL Queries
     private static final String CREATE_TIKTOK_TABLE_SQL =
             "CREATE TABLE IF NOT EXISTS TikTokPlayers (uuid TEXT PRIMARY KEY, username TEXT)";
-    private static final String CREATE_PLAYER_TIMES_TABLE_SQL =
-            "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)";
     private static final String SELECT_TIKTOK_USERNAME_SQL = "SELECT username FROM TikTokPlayers WHERE uuid = ?";
     private static final String INSERT_OR_REPLACE_TIKTOK_USERNAME_SQL =
             "INSERT OR REPLACE INTO TikTokPlayers (uuid, username) VALUES (?, ?)";
+
+    // PlayerTimes SQL Queries
+    private static final String CREATE_PLAYER_TIMES_TABLE_SQL =
+            "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)";
     private static final String SELECT_PLAYTIME_SQL = "SELECT playtime FROM PlayerTimes WHERE uuid = ?";
     private static final String INSERT_OR_REPLACE_PLAYTIME_SQL =
             "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, ?)";
     private static final String UPDATE_PLAYTIME_SQL =
             "UPDATE PlayerTimes SET playtime = 0, last_login = ? WHERE uuid = ?";
     private static final String SELECT_LAST_LOGIN_SQL = "SELECT last_login FROM PlayerTimes WHERE uuid = ?";
+
+    // PlayerSettings SQL Queries
+    private static final String CREATE_PLAYER_SETTINGS_TABLE_SQL =
+            "CREATE TABLE IF NOT EXISTS PlayerSettings (uuid TEXT PRIMARY KEY, actionbar_enabled BOOLEAN DEFAULT TRUE, bossbar_enabled BOOLEAN DEFAULT TRUE, joined_before BOOLEAN DEFAULT FALSE)";
+    private static final String SELECT_PLAYER_SETTINGS_SQL =
+            "SELECT actionbar_enabled, bossbar_enabled, joined_before FROM PlayerSettings WHERE uuid = ?";
+    private static final String INSERT_OR_REPLACE_PLAYER_SETTINGS_SQL =
+            "INSERT OR REPLACE INTO PlayerSettings (uuid, actionbar_enabled, bossbar_enabled, joined_before) VALUES (?, ?, ?, ?)";
 
     /**
      * Constructor for DatabaseManager.
@@ -47,8 +58,6 @@ public class DatabaseManager {
      * @param instance The instance of the TrueConnective plugin.
      */
     public DatabaseManager(TrueConnective instance) {
-        log = TrueConnective.getLog();
-
         // Initialize Database and Tables.
         initializeDatabase(instance);
     }
@@ -74,6 +83,7 @@ public class DatabaseManager {
 
         initializeTikTokTable();
         initializePlayerTimesTable();
+        initializePlayerSettingsTable();
     }
 
     /**
@@ -246,5 +256,65 @@ public class DatabaseManager {
             log.error("Failed to check if new day: {}", e.getMessage());
         }
         return false;
+    }
+
+    /*
+     * Database PlayerSettings Area
+     */
+    /**
+     * Initializes the PlayerSettings table if it doesn't exist.
+     */
+    public void initializePlayerSettingsTable() {
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(CREATE_PLAYER_SETTINGS_TABLE_SQL);
+        } catch (SQLException e) {
+            log.error("Failed to initialize PlayerSettings table: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Get the player settings for a player.
+     * @param player The player whose settings are to be set.
+     * @return The player settings.
+     */
+    public PlayerSettings getPlayerSettings(OfflinePlayer player) {
+        String uuid = player.getUniqueId().toString();
+        try (PreparedStatement statement = connection.prepareStatement(SELECT_PLAYER_SETTINGS_SQL)) {
+            statement.setString(1, uuid);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    boolean actionbarEnabled = resultSet.getBoolean("actionbar_enabled");
+                    boolean bossbarEnabled = resultSet.getBoolean("bossbar_enabled");
+                    boolean joinedBefore = resultSet.getBoolean("joined_before");
+
+                    if (!joinedBefore) {
+                        setPlayerSettings(player, new PlayerSettings());
+                        return new PlayerSettings();
+                    }
+                    return new PlayerSettings(actionbarEnabled, bossbarEnabled);
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Failed to get player settings: {}", e.getMessage());
+        }
+        return new PlayerSettings();
+    }
+
+    /**
+     * Set the player settings for a player.
+     * @param player The player whose settings are to be set.
+     * @param playerSettings The player settings to be set.
+     */
+    public void setPlayerSettings(OfflinePlayer player, PlayerSettings playerSettings) {
+        String uuid = player.getUniqueId().toString();
+        try (PreparedStatement statement = connection.prepareStatement(INSERT_OR_REPLACE_PLAYER_SETTINGS_SQL)) {
+            statement.setString(1, uuid);
+            statement.setBoolean(2, playerSettings.isActionbarEnabled());
+            statement.setBoolean(3, playerSettings.isBossbarEnabled());
+            statement.setBoolean(4, true);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("Failed to set player settings: {}", e.getMessage());
+        }
     }
 }

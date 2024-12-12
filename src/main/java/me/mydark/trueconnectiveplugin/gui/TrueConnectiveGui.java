@@ -1,8 +1,13 @@
+//********************************************************************************************
+// Author:      V01D-PH03N1X (PinguBasti), TrueConnective Paul & Stolle GbR
+// Project:     TrueConnective Paper Plugin
+// Description: Management Plugin for Paper Servers (Minecraft)
+//********************************************************************************************
 package me.mydark.trueconnectiveplugin.gui;
 
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
-import dev.triumphteam.gui.builder.item.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;

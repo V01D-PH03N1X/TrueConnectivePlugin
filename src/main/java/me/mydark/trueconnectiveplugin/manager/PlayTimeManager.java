@@ -8,6 +8,7 @@ package me.mydark.trueconnectiveplugin.manager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import me.mydark.trueconnectiveplugin.TrueConnective;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -15,17 +16,15 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
-import org.slf4j.Logger;
 
+@Slf4j
 public class PlayTimeManager {
-    private static Logger log;
     private static DatabaseManager databaseManager;
     private static TrueConnective instance;
 
     private final Map<UUID, BossBar> playerBossBars = new HashMap<>();
 
     public PlayTimeManager(TrueConnective plugin, DatabaseManager dbmanager) {
-        log = TrueConnective.getLog();
         databaseManager = dbmanager;
         instance = plugin;
     }
@@ -38,7 +37,6 @@ public class PlayTimeManager {
     public void checkPlaytime(Player player) {
         int playtime = databaseManager.getPlaytime(player);
         if (player.hasPermission("trueconnective.playtime.bypass")) {
-            databaseManager.updatePlaytime(player, playtime + 1);
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {

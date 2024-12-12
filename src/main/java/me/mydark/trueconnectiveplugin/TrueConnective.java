@@ -9,10 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
-import me.mydark.trueconnectiveplugin.commands.ConnectTikTokUsernameCommand;
-import me.mydark.trueconnectiveplugin.commands.RemainingPlaytimeCommand;
-import me.mydark.trueconnectiveplugin.commands.ResetPlaytimeCommand;
-import me.mydark.trueconnectiveplugin.commands.TrueConnectiveCommand;
+import me.mydark.trueconnectiveplugin.commands.*;
+import me.mydark.trueconnectiveplugin.dto.PlayerSettings;
 import me.mydark.trueconnectiveplugin.manager.DatabaseManager;
 import me.mydark.trueconnectiveplugin.manager.PlayTimeManager;
 import me.mydark.trueconnectiveplugin.manager.TikTokManager;
@@ -45,11 +43,18 @@ public final class TrueConnective extends JavaPlugin implements Listener {
 
     private DatabaseManager databaseManager;
     private TikTokManager tikTokManager;
+
+    @Getter
     private PlayTimeManager playTimeManager;
 
     private final Map<UUID, BukkitTask> playerTasks = new HashMap<>();
+
+    @Getter
     private final Map<UUID, BukkitTask> actionBarTasks = new HashMap<>();
+
+    @Getter
     private final Map<UUID, BukkitTask> bossBarTasks = new HashMap<>();
+
     /**
      * Called when the plugin is enabled.
      * Initializes the plugin, sets up the database, registers events and commands.
@@ -80,6 +85,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         commandMap.register("ttconect", "trueconnective", new ConnectTikTokUsernameCommand(databaseManager));
         commandMap.register("playtime", "trueconnective", new RemainingPlaytimeCommand(databaseManager, instance));
         commandMap.register("resetplaytime", "trueconnective", new ResetPlaytimeCommand(databaseManager));
+        commandMap.register("settings", "trueconnective", new PlayerSettingsCommand(databaseManager));
     }
 
     /**
@@ -100,60 +106,35 @@ public final class TrueConnective extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+
         if (databaseManager.isNewDay(player)) {
             databaseManager.resetPlaytime(player);
         }
-        // Check if player has the Permission "Creator"
-        if (player.hasPermission("trueconnective.creator")) {
-            String tiktokusername = databaseManager.getTiktokUsername(player).orElse(null);
-            if (!tikTokManager.checkTikTokLive(tiktokusername)) {
-                TextComponent kickMessage = Component.text()
-                        .content("Du musst Live sein um den Server zu betreten!")
-                        .color(TextColor.color(0xff6969))
-                        .decoration(TextDecoration.BOLD, true)
-                        .build();
-                player.kick(kickMessage);
-            }
-        }
 
-        TextComponent welcomeMessageViewer = Component.text()
-                .content("Willkommen auf dem Minecraft Server von")
-                .color(TextColor.color(0xEFEFEF))
-                .decoration(TextDecoration.BOLD, true)
-                .append(Component.text()
-                        .content(" TrueConnective!")
-                        .color(TextColor.color(0xEFEFEF))
-                        .decoration(TextDecoration.BOLD, true)
-                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
-                .build();
+        if (player.hasPermission("trueconnective.creator")) kickNotLiveCreator(player);
 
-        TextComponent infoMessageViewer = Component.text()
-                .content("Du möchtest mehr über TrueConnective erfahren? \n")
-                .color(TextColor.color(0xEFEFEF))
-                .append(Component.text()
-                        .content("Dann klicke hier!")
-                        .color(TextColor.color(0xFF9E3f))
-                        .decoration(TextDecoration.BOLD, true)
-                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
-                .build();
-
-        player.sendMessage(welcomeMessageViewer);
-        player.sendMessage(infoMessageViewer);
+        sendInfoMessages(player);
 
         // Schedule a task to check playtime every minute
         BukkitTask playtimeCheck = Bukkit.getScheduler()
                 .runTaskTimer(this, () -> playTimeManager.checkPlaytime(player), 0L, 1200L); // 1200L = 1 minute
         playerTasks.put(player.getUniqueId(), playtimeCheck);
 
-        // Schedule a task to update the Bossbar every second
-        BukkitTask bossbarTask = Bukkit.getScheduler()
-                .runTaskTimer(this, () -> playTimeManager.playtimeBossbarTask(player), 0L, 20L); // 20L = 1 Second
-        bossBarTasks.put(player.getUniqueId(), bossbarTask);
+        // Schedule tasks for action bar and boss bar if enabled in player settings
+        PlayerSettings playerSettings = databaseManager.getPlayerSettings(player);
+        String playerUUID = player.getUniqueId().toString();
 
-        // Schedule a task to update the action bar every second
-        BukkitTask task = Bukkit.getScheduler()
-                .runTaskTimer(this, () -> playTimeManager.actionBarTask(player), 0L, 20L); // 20L = 1 second
-        actionBarTasks.put(player.getUniqueId(), task);
+        if (playerSettings.isActionbarEnabled()) {
+            BukkitTask task = Bukkit.getScheduler()
+                    .runTaskTimer(this, () -> playTimeManager.actionBarTask(player), 0L, 20L); // 20L = 1 second
+            actionBarTasks.put(player.getUniqueId(), task);
+        }
+
+        if (playerSettings.isBossbarEnabled()) {
+            BukkitTask task = Bukkit.getScheduler()
+                    .runTaskTimer(this, () -> playTimeManager.playtimeBossbarTask(player), 0L, 20L); // 20L = 1 second
+            bossBarTasks.put(player.getUniqueId(), task);
+        }
     }
 
     /**
@@ -176,13 +157,79 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         // Update playtime in the database
         databaseManager.updatePlaytime(player, playtime + additionalPlaytime);
 
-        // Cancel scheduled tasks when the player leaves the server
-        BukkitTask playTimeCheck = playerTasks.remove(playerUUID);
-        BukkitTask actionBarTask = actionBarTasks.remove(playerUUID);
-        BukkitTask bossBarTask = bossBarTasks.remove(playerUUID);
+        removePlayerTasks(player);
+    }
 
-        if (playTimeCheck != null) playTimeCheck.cancel();
-        if (actionBarTask != null) actionBarTask.cancel();
-        if (bossBarTask != null) bossBarTask.cancel();
+    private void removeActionbarTask(Player target) {
+        UUID playerUUID = target.getUniqueId();
+        BukkitTask actionBarTask;
+
+        if (actionBarTasks.containsKey(playerUUID)) {
+            actionBarTask = actionBarTasks.remove(playerUUID);
+            actionBarTask.cancel();
+        }
+    }
+
+    private void removeBossbarTasks(Player target) {
+        UUID playerUUID = target.getUniqueId();
+        BukkitTask bossBarTask;
+
+        if (bossBarTasks.containsKey(playerUUID)) {
+            bossBarTask = bossBarTasks.remove(playerUUID);
+            playTimeManager.removeBossBar(target);
+            bossBarTask.cancel();
+        }
+    }
+
+    private void removePlayerTasks(Player target) {
+        UUID playerUUID = target.getUniqueId();
+        if (actionBarTasks.containsKey(playerUUID)) {
+            removeActionbarTask(target);
+        }
+        if (bossBarTasks.containsKey(playerUUID)) {
+            removeBossbarTasks(target);
+        }
+        if (playerTasks.containsKey(playerUUID)) {
+            BukkitTask playtimeCheck = playerTasks.remove(playerUUID);
+            playtimeCheck.cancel();
+        }
+    }
+
+    private void kickNotLiveCreator(Player target) {
+        String tiktokusername = databaseManager.getTiktokUsername(target).orElse(null);
+        if (!tikTokManager.checkTikTokLive(tiktokusername)) {
+            TextComponent kickMessage = Component.text()
+                    .content("Du musst Live sein um den Server zu betreten!")
+                    .color(TextColor.color(0xff6969))
+                    .decoration(TextDecoration.BOLD, true)
+                    .build();
+            target.kick(kickMessage);
+        }
+    }
+
+    private void sendInfoMessages(Player target) {
+        TextComponent welcomeMessageViewer = Component.text()
+                .content("Willkommen auf dem Minecraft Server von")
+                .color(TextColor.color(0xEFEFEF))
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text()
+                        .content(" TrueConnective!")
+                        .color(TextColor.color(0xEFEFEF))
+                        .decoration(TextDecoration.BOLD, true)
+                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
+                .build();
+
+        TextComponent infoMessageViewer = Component.text()
+                .content("Du möchtest mehr über TrueConnective erfahren? \n")
+                .color(TextColor.color(0xEFEFEF))
+                .append(Component.text()
+                        .content("Dann klicke hier!")
+                        .color(TextColor.color(0xFF9E3f))
+                        .decoration(TextDecoration.BOLD, true)
+                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
+                .build();
+
+        target.sendMessage(welcomeMessageViewer);
+        target.sendMessage(infoMessageViewer);
     }
 }

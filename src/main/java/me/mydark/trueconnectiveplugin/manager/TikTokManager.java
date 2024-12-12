@@ -6,22 +6,19 @@
 package me.mydark.trueconnectiveplugin.manager;
 
 import io.github.jwdeveloper.tiktok.TikTokLive;
-import me.mydark.trueconnectiveplugin.TrueConnective;
-import org.slf4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Manager class for handling TikTok related operations.
  */
+@Slf4j
 public class TikTokManager {
-    private static Logger log;
 
     /**
      * Constructor for TikTokManager.
      * Initializes the logger.
      */
-    public TikTokManager() {
-        log = TrueConnective.getLog();
-    }
+    public TikTokManager() {}
 
     /**
      * Checks if the TikTok user is live.
