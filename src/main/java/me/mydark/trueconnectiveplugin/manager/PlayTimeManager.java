@@ -205,6 +205,11 @@ public class PlayTimeManager {
         if (progress > 0.66) playerBossBar.color(BossBar.Color.GREEN);
     }
 
+    public void removeBossBar(Player player) {
+        player.hideBossBar(playerBossBars.get(player.getUniqueId()));
+        playerBossBars.remove(player.getUniqueId());
+    }
+
     /**
      * Calculates the Percentage of the value in the range 0-1 (1 = 100%)
      * @param max The maximal value (100%)

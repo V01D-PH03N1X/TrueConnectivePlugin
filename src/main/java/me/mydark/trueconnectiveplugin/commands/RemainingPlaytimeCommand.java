@@ -24,13 +24,11 @@ import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 /**
  * Command to get the remaining playtime of a player.
  */
 public class RemainingPlaytimeCommand extends BukkitCommand implements TabCompleter {
-    private static Logger log;
     private static DatabaseManager databaseManager;
     private static TrueConnective instance;
 
@@ -42,7 +40,6 @@ public class RemainingPlaytimeCommand extends BukkitCommand implements TabComple
      */
     public RemainingPlaytimeCommand(DatabaseManager dbmanager, TrueConnective plugin) {
         super("playtime");
-        log = TrueConnective.getLog();
         databaseManager = dbmanager;
         instance = plugin;
     }
