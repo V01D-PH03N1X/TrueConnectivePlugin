@@ -7,6 +7,9 @@ package me.mydark.trueconnectiveplugin.commands;
 
 import lombok.extern.slf4j.Slf4j;
 import me.mydark.trueconnectiveplugin.gui.TrueConnectiveGui;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
@@ -39,8 +42,17 @@ public class TrueConnectiveCommand extends BukkitCommand {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
-            gui.open(player);
-            return true;
+            if (player.hasPermission("trueconnective.gui")) {
+                gui.open(player);
+                return true;
+            }
+            TextComponent message = Component.text()
+                    .content("Du hast keine Berechtigung, um diesen Befehl auszuführen!")
+                    .color(TextColor.color(0xff6969))
+                    .build();
+
+            player.sendMessage(message);
+            return false;
         }
         log.error("This command can only be executed by a player!");
         return false;

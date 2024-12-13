@@ -29,12 +29,15 @@ commands:
     aliases: [rpt]
 
 permissions:
-    trueconnective.menu.*:
-        description: Allows access to TrueConnective Menus.
-        default: true
+    trueconnective.menu.trueconnective:
+      description: Allows access to TrueConnective Menus.
+      default: true
+    trueconnective.menu.settings:
+      description: Allows access to TrueConnective Settings.
+      default: true
     trueconnective.playtime.get:
-        description: Allows to see the Playtime of a Player.
-        default: true
+      description: Allows to see the Playtime of a Player.
+      default: true
     trueconnective.playtime.reset:
       description: Allows to reset the Playtime of a Player.
       default: false

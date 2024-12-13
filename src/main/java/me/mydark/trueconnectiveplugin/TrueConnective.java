@@ -211,7 +211,6 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         TextComponent welcomeMessageViewer = Component.text()
                 .content("Willkommen auf dem Minecraft Server von")
                 .color(TextColor.color(0xEFEFEF))
-                .decoration(TextDecoration.BOLD, true)
                 .append(Component.text()
                         .content(" TrueConnective!")
                         .color(TextColor.color(0xEFEFEF))
@@ -220,7 +219,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
                 .build();
 
         TextComponent infoMessageViewer = Component.text()
-                .content("Du möchtest mehr über TrueConnective erfahren? \n")
+                .content("Du möchtest mehr über TrueConnective erfahren? Dann nutze /trueconnective \n")
                 .color(TextColor.color(0xEFEFEF))
                 .append(Component.text()
                         .content("Dann klicke hier!")

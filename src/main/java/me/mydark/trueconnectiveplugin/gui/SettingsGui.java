@@ -79,12 +79,12 @@ public class SettingsGui {
         gui.getFiller().fill(filler);
         gui.setCloseGuiAction(event -> {
             TextComponent closeMessage = Component.text()
-                    .content("Einstellungen geschlossen!")
+                    .content("Einstellungen erfolgreich gespeichert!")
                     .color(TextColor.color(0x3F9EFF))
                     .decoration(TextDecoration.BOLD, true)
                     .build();
             TextComponent actionbarMessage = Component.text()
-                    .content("Actionbar: ")
+                    .content("Spielzeit Actionbar: ")
                     .color(TextColor.color(0xDFDFDF))
                     .append(Component.text(playerSettings.isActionbarEnabled() ? "aktiviert" : "deaktiviert")
                             .color(
@@ -93,7 +93,7 @@ public class SettingsGui {
                                             : TextColor.color(0xFF6969)))
                     .build();
             TextComponent bossbarMessage = Component.text()
-                    .content("Bossbar: ")
+                    .content("Spielzeit Bossbar: ")
                     .color(TextColor.color(0xDFDFDF))
                     .append(Component.text(playerSettings.isBossbarEnabled() ? "aktiviert" : "deaktiviert")
                             .color(

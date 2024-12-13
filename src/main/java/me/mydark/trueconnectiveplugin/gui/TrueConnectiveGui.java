@@ -42,8 +42,7 @@ public class TrueConnectiveGui {
         GuiItem tcItem = ItemBuilder.from(Material.BLACK_CONCRETE)
                 .name(Component.text()
                         .content("Erfahre mehr oder bewerbe dich jetzt!")
-                        .color(TextColor.color(0xef3535))
-                        .decoration(TextDecoration.BOLD, true)
+                        .color(TextColor.color(0xef6969))
                         .build())
                 .asGuiItem(event -> {
                     webTrueConnective((Player) event.getWhoClicked());
@@ -51,7 +50,7 @@ public class TrueConnectiveGui {
                 });
 
         trueConnectiveMenu.getFiller().fill(fillerItem);
-        trueConnectiveMenu.setItem(3, tcItem);
+        trueConnectiveMenu.setItem(4, tcItem);
     }
 
     /**
@@ -63,7 +62,6 @@ public class TrueConnectiveGui {
         TextComponent webPage = Component.text()
                 .content("Klicke hier um mehr über TrueConnective zu erfahren!")
                 .color(TextColor.color(0x3F9EFF))
-                .decoration(TextDecoration.BOLD, true)
                 .clickEvent(ClickEvent.openUrl("https://trueconnective.com"))
                 .build();
         player.sendMessage(webPage);
