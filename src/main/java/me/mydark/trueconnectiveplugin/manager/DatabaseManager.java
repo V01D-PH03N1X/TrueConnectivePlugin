@@ -35,7 +35,7 @@ public class DatabaseManager {
 
     // PlayerTimes SQL Queries
     private static final String CREATE_PLAYER_TIMES_TABLE_SQL =
-            "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login DATE)";
+            "CREATE TABLE IF NOT EXISTS PlayerTimes (uuid TEXT PRIMARY KEY, playtime INTEGER, last_login TEXT)";
     private static final String SELECT_PLAYTIME_SQL = "SELECT playtime FROM PlayerTimes WHERE uuid = ?";
     private static final String INSERT_OR_REPLACE_PLAYTIME_SQL =
             "INSERT OR REPLACE INTO PlayerTimes (uuid, playtime, last_login) VALUES (?, ?, ?)";
@@ -177,7 +177,7 @@ public class DatabaseManager {
      * Retrieves the playtime for a player.
      *
      * @param player The player whose playtime is to be retrieved.
-     * @return The playtime of the player in minutes.
+     * @return The playtime of the player in seconds.
      */
     public int getPlaytime(OfflinePlayer player) {
         String uuid = player.getUniqueId().toString();
@@ -185,7 +185,7 @@ public class DatabaseManager {
             statement.setString(1, uuid);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return resultSet.getInt("playtime");
+                    return resultSet.getInt("playtime"); // Return playtime in seconds
                 }
             }
         } catch (SQLException e) {
@@ -198,13 +198,13 @@ public class DatabaseManager {
      * Updates the playtime for a player.
      *
      * @param player   The player whose playtime is to be updated.
-     * @param playtime The new playtime to be set.
+     * @param playtimeSeconds The new playtime to be set.
      */
-    public void updatePlaytime(OfflinePlayer player, int playtime) {
+    public void updatePlaytime(OfflinePlayer player, int playtimeSeconds) {
         String uuid = player.getUniqueId().toString();
         try (PreparedStatement statement = connection.prepareStatement(INSERT_OR_REPLACE_PLAYTIME_SQL)) {
             statement.setString(1, uuid);
-            statement.setInt(2, playtime);
+            statement.setInt(2, playtimeSeconds); // Store playtime in seconds
             statement.setString(3, LocalDate.now().format(DATE_FORMATTER));
             statement.executeUpdate();
         } catch (SQLException e) {

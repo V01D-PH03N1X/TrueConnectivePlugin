@@ -35,33 +35,33 @@ public class PlayTimeManager {
      * @param player The player to check.
      */
     public void checkPlaytime(Player player) {
-        int playtime = databaseManager.getPlaytime(player);
+        int playtimeSeconds = databaseManager.getPlaytime(player);
+        int maxPlaytimeSeconds;
+
         if (player.hasPermission("trueconnective.playtime.bypass")) {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            if (playtime >= instance.getConfig().getInt("creator.max-playtime")) {
-                TextComponent kickMessage = Component.text()
-                        .content("Du hast dein tägliches Spielzeitlimit erreicht! \nDu kannst morgen wieder spielen.")
-                        .color(TextColor.color(0xff6969))
-                        .decoration(TextDecoration.BOLD, true)
-                        .build();
-                player.kick(kickMessage);
-            } else {
-                databaseManager.updatePlaytime(player, playtime + 1);
-            }
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
         } else {
-            if (playtime >= instance.getConfig().getInt("viewer.max-playtime")) {
-                TextComponent kickMessage = Component.text()
-                        .content("Du hast dein tägliches Spielzeitlimit erreicht! \nDu kannst morgen wieder spielen.")
-                        .color(TextColor.color(0xff6969))
-                        .decoration(TextDecoration.BOLD, true)
-                        .build();
-                player.kick(kickMessage);
-            } else {
-                databaseManager.updatePlaytime(player, playtime + 1);
-            }
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
         }
+
+        if (playtimeSeconds >= maxPlaytimeSeconds) {
+            TextComponent kickMessage = Component.text()
+                    .content("Du hast dein tägliches Spielzeitlimit erreicht! \nDu kannst morgen wieder spielen.")
+                    .color(TextColor.color(0xff6969))
+                    .decoration(TextDecoration.BOLD, true)
+                    .build();
+            player.kick(kickMessage);
+        } else {
+            databaseManager.updatePlaytime(player, playtimeSeconds + 60); // Update playtime in seconds
+        }
+    }
+
+    public void addPlaytime(Player player, int seconds) {
+        int currentPlaytime = databaseManager.getPlaytime(player);
+        databaseManager.updatePlaytime(player, currentPlaytime - seconds);
     }
 
     /**
@@ -70,7 +70,9 @@ public class PlayTimeManager {
      * @param player The player to update.
      */
     public void actionBarTask(Player player) {
-        int playtime = databaseManager.getPlaytime(player);
+        int playtimeSeconds = databaseManager.getPlaytime(player);
+        int maxPlaytimeSeconds;
+
         if (player.hasPermission("trueconnective.playtime.bypass")) {
             player.sendActionBar(Component.text()
                     .content("Du hast unbegrenzte Spielzeit!")
@@ -80,10 +82,13 @@ public class PlayTimeManager {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            player.sendActionBar(formatRemainingTime(instance.getConfig().getInt("creator.max-playtime") - playtime));
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
         } else {
-            player.sendActionBar(formatRemainingTime(instance.getConfig().getInt("viewer.max-playtime") - playtime));
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
         }
+
+        player.sendActionBar(
+                formatRemainingTime((maxPlaytimeSeconds - playtimeSeconds) / 60)); // Display remaining time in minutes
     }
 
     /**
@@ -98,10 +103,8 @@ public class PlayTimeManager {
         // int remainingMinutes = minutes % 60;
 
         return Component.text()
-                .content("Verbleibende Spielzeit: ")
+                .content("Du hast" + minutes + " Minuten verbleibend!")
                 .color(TextColor.color(0xDFDFDF))
-                .decoration(TextDecoration.BOLD, true)
-                .append(Component.text().content(String.valueOf(minutes)).color(TextColor.color(0xEFEFEF)))
                 .build();
     }
 
@@ -111,10 +114,9 @@ public class PlayTimeManager {
      */
     public void playtimeBossbarTask(Player player) {
         UUID playerUUID = player.getUniqueId();
-        int playtime = databaseManager.getPlaytime(player);
-        int maxPlaytime;
+        int playtimeSeconds = databaseManager.getPlaytime(player);
+        int maxPlaytimeSeconds;
 
-        BossBar playtimeBossBar;
         if (player.hasPermission("trueconnective.playtime.bypass")) {
             if (playerBossBars.get(playerUUID) != null) {
                 updateBossBar(
@@ -126,7 +128,7 @@ public class PlayTimeManager {
                                 .build(),
                         (float) 0.01);
             } else {
-                playtimeBossBar = formatPlaytimeBossBar(
+                BossBar playtimeBossBar = formatPlaytimeBossBar(
                         Component.text()
                                 .content("Du hast unbegrenzte Spielzeit!")
                                 .color(TextColor.color(0xff6969))
@@ -139,29 +141,24 @@ public class PlayTimeManager {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            maxPlaytime = instance.getConfig().getInt("creator.max-playtime");
-            int remainingPlaytime = maxPlaytime - playtime;
-            float progress = getPercentage(maxPlaytime, remainingPlaytime);
-
-            if (playerBossBars.get(playerUUID) != null) {
-                updateBossBar(playerBossBars.get(playerUUID), formatRemainingTime(remainingPlaytime), progress);
-            } else {
-                playtimeBossBar = formatPlaytimeBossBar(formatRemainingTime(remainingPlaytime), progress);
-                playerBossBars.put(playerUUID, playtimeBossBar);
-                player.showBossBar(playtimeBossBar);
-            }
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
         } else {
-            maxPlaytime = instance.getConfig().getInt("viewer.max-playtime");
-            int remainingPlaytime = maxPlaytime - playtime;
-            float progress = getPercentage(maxPlaytime, remainingPlaytime);
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
+        }
 
-            if (playerBossBars.get(playerUUID) != null) {
-                updateBossBar(playerBossBars.get(playerUUID), formatRemainingTime(remainingPlaytime), progress);
-            } else {
-                playtimeBossBar = formatPlaytimeBossBar(formatRemainingTime(remainingPlaytime), progress);
-                playerBossBars.put(playerUUID, playtimeBossBar);
-                player.showBossBar(playtimeBossBar);
-            }
+        int remainingPlaytimeSeconds = maxPlaytimeSeconds - playtimeSeconds;
+        float progress = getPercentage(maxPlaytimeSeconds, remainingPlaytimeSeconds);
+
+        if (playerBossBars.get(playerUUID) != null) {
+            updateBossBar(
+                    playerBossBars.get(playerUUID),
+                    formatRemainingTime(remainingPlaytimeSeconds / 60),
+                    progress); // Display remaining time in minutes
+        } else {
+            BossBar playtimeBossBar = formatPlaytimeBossBar(
+                    formatRemainingTime(remainingPlaytimeSeconds / 60), progress); // Display remaining time in minutes
+            playerBossBars.put(playerUUID, playtimeBossBar);
+            player.showBossBar(playtimeBossBar);
         }
     }
 
@@ -215,6 +212,7 @@ public class PlayTimeManager {
      * @return The percentage as float value between 0 and 1
      */
     private float getPercentage(int max, int value) {
+        float progress;
         if (value == 0) {
             log.warn("Playtime value is zero, returning 0 because the playtime is over");
             return 0;
@@ -223,6 +221,16 @@ public class PlayTimeManager {
             log.warn("Max value is zero, returning 0 because of division by zero");
             return 1;
         }
-        return ((float) ((float) value / ((float) max / 100)) / 100);
+        progress = ((float) ((float) value / ((float) max / 100)) / 100);
+
+        if (progress < 0) {
+            log.warn("Progress is negative, returning 0 because of negative progress");
+            return 0;
+        }
+        if (progress > 1) {
+            log.warn("Progress is greater than 1, returning 1 because of progress greater than 1");
+            return 1;
+        }
+        return progress;
     }
 }

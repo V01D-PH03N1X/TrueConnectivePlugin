@@ -44,15 +44,15 @@ public class PlayerSettingsCommand extends BukkitCommand {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if (sender instanceof Player player) {
-            if(player.hasPermission("trueconnective.settings")) {
+            if (player.hasPermission("trueconnective.settings")) {
                 SettingsGui gui = new SettingsGui(databaseManager.getPlayerSettings(player), databaseManager);
                 gui.open(player);
                 return true;
             }
             TextComponent message = Component.text()
-                            .content("Du hast keine Berechtigung, um diesen Befehl auszuführen!")
-                            .color(TextColor.color(0xff6969))
-                            .build();
+                    .content("Du hast keine Berechtigung, um diesen Befehl auszuführen!")
+                    .color(TextColor.color(0xff6969))
+                    .build();
 
             player.sendMessage(message);
             return false;

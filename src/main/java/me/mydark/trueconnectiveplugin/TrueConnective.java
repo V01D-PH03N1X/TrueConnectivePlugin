@@ -86,6 +86,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         commandMap.register("playtime", "trueconnective", new RemainingPlaytimeCommand(databaseManager, instance));
         commandMap.register("resetplaytime", "trueconnective", new ResetPlaytimeCommand(databaseManager));
         commandMap.register("settings", "trueconnective", new PlayerSettingsCommand(databaseManager));
+        commandMap.register("addplaytime", "trueconnective", new AddPlaytimeCommand(playTimeManager));
     }
 
     /**
@@ -221,11 +222,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
         TextComponent infoMessageViewer = Component.text()
                 .content("Du möchtest mehr über TrueConnective erfahren? Dann nutze /trueconnective \n")
                 .color(TextColor.color(0xEFEFEF))
-                .append(Component.text()
-                        .content("Dann klicke hier!")
-                        .color(TextColor.color(0xFF9E3f))
-                        .decoration(TextDecoration.BOLD, true)
-                        .clickEvent(ClickEvent.openUrl("https://trueconnective.com")))
+                .clickEvent(ClickEvent.openUrl("https://trueconnective.com"))
                 .build();
 
         target.sendMessage(welcomeMessageViewer);
