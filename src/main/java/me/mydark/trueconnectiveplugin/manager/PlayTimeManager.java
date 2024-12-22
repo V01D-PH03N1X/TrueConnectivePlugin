@@ -42,9 +42,9 @@ public class PlayTimeManager {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes of the Config to seconds
         } else {
-            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes of the Config to seconds
         }
 
         if (playtimeSeconds >= maxPlaytimeSeconds) {
@@ -55,7 +55,7 @@ public class PlayTimeManager {
                     .build();
             player.kick(kickMessage);
         } else {
-            databaseManager.updatePlaytime(player, playtimeSeconds + 60); // Update playtime in seconds
+            databaseManager.updatePlaytime(player, playtimeSeconds + 60); // Update the playtime of the Player in seconds
         }
     }
 
@@ -82,9 +82,9 @@ public class PlayTimeManager {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes of the Config to seconds
         } else {
-            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes of the Config to seconds
         }
 
         player.sendActionBar(
@@ -103,7 +103,7 @@ public class PlayTimeManager {
         // int remainingMinutes = minutes % 60;
 
         return Component.text()
-                .content("Du hast" + minutes + " Minuten verbleibend!")
+                .content("Du hast " + minutes + " Minuten verbleibend!")
                 .color(TextColor.color(0xDFDFDF))
                 .build();
     }
@@ -141,9 +141,9 @@ public class PlayTimeManager {
             return;
         }
         if (player.hasPermission("trueconnective.creator")) {
-            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("creator.max-playtime") * 60; // Convert minutes of the Config to seconds
         } else {
-            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes to seconds
+            maxPlaytimeSeconds = instance.getConfig().getInt("viewer.max-playtime") * 60; // Convert minutes of the Config to seconds
         }
 
         int remainingPlaytimeSeconds = maxPlaytimeSeconds - playtimeSeconds;
@@ -214,21 +214,17 @@ public class PlayTimeManager {
     private float getPercentage(int max, int value) {
         float progress;
         if (value == 0) {
-            log.warn("Playtime value is zero, returning 0 because the playtime is over");
             return 0;
         }
         if (max == 0) {
-            log.warn("Max value is zero, returning 0 because of division by zero");
             return 1;
         }
         progress = ((float) ((float) value / ((float) max / 100)) / 100);
 
         if (progress < 0) {
-            log.warn("Progress is negative, returning 0 because of negative progress");
             return 0;
         }
         if (progress > 1) {
-            log.warn("Progress is greater than 1, returning 1 because of progress greater than 1");
             return 1;
         }
         return progress;

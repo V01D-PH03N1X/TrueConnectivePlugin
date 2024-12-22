@@ -6,6 +6,9 @@
 package me.mydark.trueconnectiveplugin.manager;
 
 import io.github.jwdeveloper.tiktok.TikTokLive;
+import io.github.jwdeveloper.tiktok.TikTokLiveMessageHandler;
+import io.github.jwdeveloper.tiktok.data.models.gifts.Gift;
+import io.github.jwdeveloper.tiktok.live.GiftsManager;
 import lombok.extern.slf4j.Slf4j;
 
 /**

@@ -220,7 +220,7 @@ public final class TrueConnective extends JavaPlugin implements Listener {
                 .build();
 
         TextComponent infoMessageViewer = Component.text()
-                .content("Du möchtest mehr über TrueConnective erfahren? Dann nutze /trueconnective \n")
+                .content("Du möchtest mehr über TrueConnective erfahren? \nDann nutze /trueconnective \n")
                 .color(TextColor.color(0xEFEFEF))
                 .clickEvent(ClickEvent.openUrl("https://trueconnective.com"))
                 .build();
